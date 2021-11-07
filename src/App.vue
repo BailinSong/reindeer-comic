@@ -1,51 +1,44 @@
 <template>
   <v-app>
     <v-main>
-      <v-row no-gutters>
-       
-
-        <v-col cols="12" v-for="file in files" :key="file">
-          <v-img
-            style="display: flex; justify-content: space-around"
-            flex
-            :src="file"
-            contain
-            aspect-ratio="0.71"
-            max-height="1080"
-          ></v-img>
-        </v-col>
-      </v-row>
+      <Library @openBook-event="openBookVeiw" v-if="!this.openBook"></Library>
+      <book-veiw :bookPath='bookPath' v-else></book-veiw>
     </v-main>
   </v-app>
 </template>
 
 <script>
+import BookVeiw from "./components/BookVeiw.vue";
+import Library from "./components/Library.vue";
 export default {
   name: "App",
-
+  components: { Library, BookVeiw },
   data() {
     return {
-      files: [],
-      cPath: "",
-      width: 500,
+      bookPath: "",
+      openBook: false,
     };
   },
   computed: {},
   mounted() {
-    const { ipcRenderer } = require("electron");
-
-    console.log(this.files);
-
-    let fileList = this.files;
-    ipcRenderer.on("readfs-reply", (event, arg) => {
-      fileList.slice(0, 0);
-      arg.forEach((element) => {
-        fileList.push(element);
-      });
-    });
-    ipcRenderer.send("readfs", this.cPath);
+    document.onkeyup = (event) => {
+      event.key;
+      console.log(event.key);
+      if (event.key == "Escape") {
+        console.log("UP:" + event.key);
+        this.bookPath = "";
+        this.openBook = false;
+      }
+    };
   },
 
-  methods: {},
+  methods: {
+    openBookVeiw(bookPath) {
+      console.log("openbook:" + bookPath);
+
+      this.bookPath = bookPath;
+      this.openBook = true;
+    },
+  },
 };
 </script>

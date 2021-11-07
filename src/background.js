@@ -13,7 +13,7 @@ protocol.registerSchemesAsPrivileged([
 async function createWindow() {
   // Create the browser window.
   const win = new BrowserWindow({
-    // useContentSize: true,
+     useContentSize: true,
     // frame: false,
     width: 800,
     height: 600,
@@ -25,7 +25,8 @@ async function createWindow() {
       // See nklayman.github.io/vue-cli-plugin-electron-builder/guide/security.html#node-integration for more info
       nodeIntegration: process.env.ELECTRON_NODE_INTEGRATION,
       contextIsolation: !process.env.ELECTRON_NODE_INTEGRATION,
-      webSecurity: false
+      webSecurity: false,
+      nativeWindowOpen: true
     }
   })
 
@@ -90,14 +91,14 @@ app.whenReady().then(() => {
     var zUrl = ''
 
     if (url.toLowerCase().startsWith('./') ||
-      url.toLowerCase().startsWith('../') 
-      ) {
+      url.toLowerCase().startsWith('../')
+    ) {
       zUrl = url.substr(0, idx + 4)
       eName = url.substr(idx + 5)
-    } else if(url.toLowerCase().startsWith('/')){
+    } else if (url.toLowerCase().startsWith('/')) {
       zUrl = url.substr(1, idx + 4)
       eName = url.substr(idx + 5)
-    }else {
+    } else {
       zUrl = url.substr(1, idx + 4)
       eName = url.substr(idx + 5)
     }
@@ -133,6 +134,89 @@ app.on('ready', async () => {
   createWindow()
 })
 
+ipcMain.on('readdb', (event) => {
+  try {
+    var fs = require('fs')
+    const path = require('path')
+    let dbFile = path.join('./library.db')
+
+    var data = fs.readFileSync(dbFile, 'utf-8')
+    let books = JSON.parse(data);
+
+
+    event.reply('readdb-reply', books)
+  } catch (err) {
+    console.log(err)
+  }
+})
+
+ipcMain.on('writedb', (event, arg) => {
+
+  try {
+    var fs = require('fs')
+    const path = require('path')
+    let dbFile = path.join('./library.db')
+    var booksInfo = JSON.stringify(arg)
+    fs.writeFileSync(dbFile, booksInfo)
+
+    event.reply('writedb-reply', true)
+  } catch (err) {
+    console.log(err)
+    event.reply('writedb-reply', false)
+
+  }
+})
+
+ipcMain.on('addBooks', (event, arg) => {
+   var fs = require('fs')
+  const path = require('path')
+  var books=[]
+
+  for(var index in arg){
+    let book={}
+    book.path=arg[index]
+    let bookInfo = fs.lstatSync(path.join(book.path))
+    
+    console.log(bookInfo)
+    if(bookInfo.isDirectory()){
+
+      book.title=path.basename(book.path)
+      book.src=fs.readdirSync(book.path)[0]
+      console.log('dir:'+book)
+
+    }else if(book.path.toLowerCase().endsWith('.zip')){
+      
+      book.title=path.basename(book.path,'.zip')
+
+      var Zip = require('adm-zip');
+      console.log(arg)
+      var zip = new Zip(arg);
+      var zipEntries = zip.getEntries();
+      for (var zipEindex in zipEntries) {
+        var zipEntry = zipEntries[zipEindex]
+        console.log(zipEntry)
+        if (zipEntry.isDirectory == false) {
+          book.src='zip:///' + arg + '/' + zipEntry.entryName.toString()
+        }
+  
+      }
+     
+      console.log('zip:'+book)
+    }
+    books.push(book);
+    
+    
+  }
+  event.reply('addBooks-reply', books)
+  // {
+  //   key:"1234-09878",
+  //   path":"Z:/漫画/[ポンスケ] ちびっこエッチ [中国翻译].zip",
+  //   src":"zip:///Z:/漫画/[ポンスケ] ちびっこエッチ [中国翻译].zip/001.png",
+  //   title":"[ポンスケ] ちびっこエッチ [中国翻译]"
+  // }
+ 
+})
+
 ipcMain.on('readfs', (event, arg) => {
 
 
@@ -148,12 +232,12 @@ ipcMain.on('readfs', (event, arg) => {
 
 
     for (var index in zipEntries) {
-      var zipEntry=zipEntries[index]
+      var zipEntry = zipEntries[index]
       console.log(zipEntry)
-      if (zipEntry.isDirectory == false){
+      if (zipEntry.isDirectory == false) {
         fullPathFiles.push('zip:///' + arg + '/' + zipEntry.entryName.toString())
       }
-        
+
     }
   }
 
@@ -167,7 +251,7 @@ ipcMain.on('readfs', (event, arg) => {
 
 
     for (var file in files) {
-      fullPathFiles.push(arg + '/' + file);
+      fullPathFiles.push(arg + '/' + files[file]);
     }
 
 
@@ -191,3 +275,5 @@ if (isDevelopment) {
     })
   }
 }
+
+
