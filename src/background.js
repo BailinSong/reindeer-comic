@@ -1,6 +1,6 @@
 'use strict'
 
-import {app, BrowserWindow, ipcMain, protocol} from 'electron'
+import {app, BrowserWindow, ipcMain, protocol,nativeTheme} from 'electron'
 import {createProtocol} from 'vue-cli-plugin-electron-builder/lib'
 import installExtension, {VUEJS_DEVTOOLS} from 'electron-devtools-installer'
 import Zip from 'adm-zip'
@@ -9,12 +9,44 @@ import path from 'path'
 
 const isDevelopment = process.env.NODE_ENV !== 'production'
 
+const dbFilePath = ((isDevelopment) ? './library.db' : ((process.platform === 'darwin') ? '～/Library/Containers/ooo.reindeer.comic/Data/library.db' : './library.db'))
+
+
 // Scheme must be registered before the app is ready
 protocol.registerSchemesAsPrivileged([
     {scheme: 'app', privileges: {secure: true, standard: true}},
 ])
 
+let db ={
+    confic:{},
+    books:[]
+}
+
 async function createWindow() {
+
+    // //判断是否为OSX
+    // if(process.platform=="darwin"){
+    //     console.log('is Mac :'+nativeTheme.shouldUseDarkColors);
+    //     this.$vuetify.theme.dark = true
+    //     //当桌面主题更新时
+    //     nativeTheme.on('updated',()=>{
+    //         console.log('i am changed')
+    //         if(nativeTheme.shouldUseDarkColors){
+    //             console.log("i am dark.")
+    //             this.$vuetify.theme.dark = true
+    //
+    //         }else{
+    //             console.log("i am light.")
+    //             this.$vuetify.theme.dark = false
+    //
+    //         }
+    //     })
+    // }else{
+    //     console.log('not Mac');
+    // }
+
+
+
     // Create the browser window.
     const win = new BrowserWindow({
         useContentSize: true,
@@ -23,6 +55,8 @@ async function createWindow() {
         height: 600,
         minWidth: 357,
         minHeight: 400,
+        background:'#3a3a3a',
+
         webPreferences: {
 
             // Use pluginOptions.nodeIntegration, leave this alone
@@ -52,6 +86,7 @@ app.on('window-all-closed', () => {
     // On macOS it is common for applications and their menu bar
     // to stay active until the user quits explicitly with Cmd + Q
     if (process.platform !== 'darwin') {
+
         app.quit()
     }
 })
@@ -65,12 +100,12 @@ app.on('activate', () => {
 app.whenReady().then(() => {
     protocol.registerBufferProtocol('zip', (request, callback) => {
 
-        const url = decodeURI(request.url.substr(6));
-        const idx = url.toLowerCase().indexOf('.zip/');
-        let eName;
-        let zUrl;
+            const url = decodeURI(request.url.substr(6));
+            const idx = url.toLowerCase().indexOf('.zip/');
+            let eName;
+            let zUrl;
 
-        if (url.toLowerCase().startsWith('./') ||
+            if (url.toLowerCase().startsWith('./') ||
                 url.toLowerCase().startsWith('../')
             ) {
                 zUrl = url.substr(0, idx + 4)
@@ -89,9 +124,9 @@ app.whenReady().then(() => {
             }
 
             // var Zip = require('adm-zip');
-        const zip = new Zip(zUrl);
+            const zip = new Zip(zUrl);
 
-        callback({
+            callback({
                 data: zip.readFile(eName)
             })
         }, function (error) {
@@ -119,13 +154,23 @@ app.on('ready', async () => {
 ipcMain.on('readdb', (event) => {
     try {
 
-        const dbFile = path.join('./library.db');
+        const dbFile = path.join(dbFilePath);
+
+        if (!fs.existsSync(dbFile)) {
+            fs.writeFileSync(dbFile, '{}', {'flag': 'a'})
+        }
 
         const data = fs.readFileSync(dbFile, 'utf-8');
-        const books = JSON.parse(data);
 
 
-        event.reply('readdb-reply', books)
+        db = JSON.parse(data);
+
+
+        db.books.sort((A, B) => {
+            return nature(A.title, B.title)
+        })
+
+        event.reply('readdb-reply', db.books)
     } catch (err) {
         console.log(err)
     }
@@ -135,10 +180,11 @@ ipcMain.on('writedb', (event, arg) => {
 
     try {
 
-        const dbFile = path.join('./library.db')
-        const booksInfo = JSON.stringify(arg);
+        db.books=arg;
 
-        fs.writeFileSync(dbFile, booksInfo)
+        const dbFile = path.join(dbFilePath)
+
+        fs.writeFileSync(dbFile, JSON.stringify(db))
 
         event.reply('writedb-reply', true)
     } catch (err) {
@@ -275,12 +321,15 @@ if (isDevelopment) {
     if (process.platform === 'win32') {
         process.on('message', (data) => {
             if (data === 'graceful-exit') {
+
                 app.quit()
             }
         })
     } else {
         process.on('SIGTERM', () => {
+
             app.quit()
+
         })
     }
 }
@@ -296,48 +345,50 @@ function isImage(filePath) {
 }
 
 function orderImage(imagePathList) {
-    imagePathList.sort((a, b) => {
-        let startIndex = -1;
-
-        let tempA = a;
-        let tempB = b;
-        if (tempA.length >= tempB.length) {
-            for (let i = 0; i < tempA.length; i++) {
-                if (tempA[i] !== tempB[i]) {
-                    startIndex = i
-                    break;
-                }
-            }
-        } else {
-            for (let i = 0; i < tempB.length; i++) {
-                if (tempB[i] !== tempA[i]) {
-                    startIndex = i
-                    break;
-                }
-            }
-        }
-        tempA = tempA.substr(startIndex, tempA.length - startIndex)
-        tempB = tempB.substr(startIndex, tempB.length - startIndex)
-
-
-        if (tempA.length > tempB.length) {
-            for (let i = 0; i < tempA.length - tempB.length; i++) {
-                tempB = '0' + tempB
-            }
-        } else if (tempB.length > tempA.length) {
-            for (let i = 0; i < tempB.length - tempA.length; i++) {
-                tempA = '0' + tempA
-            }
-        }
-
-        if (tempA > tempB) {
-            return 1
-        } else if (tempA < tempB) {
-            return -1
-        } else {
-            return 0
-        }
-
-    })
+    imagePathList.sort(nature)
     return imagePathList
+}
+
+function nature(a, b) {
+    let startIndex = -1;
+
+    let tempA = a;
+    let tempB = b;
+    if (tempA.length >= tempB.length) {
+        for (let i = 0; i < tempA.length; i++) {
+            if (tempA[i] !== tempB[i]) {
+                startIndex = i
+                break;
+            }
+        }
+    } else {
+        for (let i = 0; i < tempB.length; i++) {
+            if (tempB[i] !== tempA[i]) {
+                startIndex = i
+                break;
+            }
+        }
+    }
+    tempA = tempA.substr(startIndex, tempA.length - startIndex)
+    tempB = tempB.substr(startIndex, tempB.length - startIndex)
+
+
+    if (tempA.length > tempB.length) {
+        for (let i = 0; i < tempA.length - tempB.length; i++) {
+            tempB = '0' + tempB
+        }
+    } else if (tempB.length > tempA.length) {
+        for (let i = 0; i < tempB.length - tempA.length; i++) {
+            tempA = '0' + tempA
+        }
+    }
+
+    if (tempA > tempB) {
+        return 1
+    } else if (tempA < tempB) {
+        return -1
+    } else {
+        return 0
+    }
+
 }

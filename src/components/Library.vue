@@ -1,6 +1,6 @@
 <template>
-<div id="drag">
-  <v-container  flex>
+<div style="height: 100%;width: 100%" id="drag">
+  <v-container flex>
     <v-row class="text-center">
       <v-col sm="6" md="4" lg="3" xl="2" v-for="book in books" :key="book.path">
         <v-card
@@ -50,6 +50,7 @@ export default {
   }),
 
   mounted() {
+    this.$vuetify.dark=true
     const { ipcRenderer } = require("electron");
     let wrapper = document.getElementById("drag");
     wrapper.addEventListener("drop", (event) => {

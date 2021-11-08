@@ -1,8 +1,1 @@
-[
-    {
-        "key":"1234-0987",
-        "path":"E:/books/截图",
-        "src":"E:/books/截图/屏幕截图 2021-08-16 003305.png",
-        "title":"屏幕截图 2021-08-16 003305"
-    }
-]
+{"books":[{"path":"/Users/songbailin/Downloads/288664.zip","title":"288664","src":"zip:///Users/songbailin/Downloads/288664.zip/00001.jpg"}]}

@@ -29,6 +29,9 @@ export default {
         this.bookPath = "";
         this.openBook = false;
       }
+
+      if(event.ctrlKey&&event.key=='t')
+        this.$vuetify.theme.dark=!this.$vuetify.theme.dark
     };
   },
 
