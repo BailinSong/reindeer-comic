@@ -6,7 +6,9 @@ function resolve (dir) {
 
 module.exports = {
   publicPath: './',
-
+  configureWebpack: {
+    devtool: 'source-map'
+  },
   devServer: {
     // can be overwritten by process.env.HOST
     host: '0.0.0.0',  

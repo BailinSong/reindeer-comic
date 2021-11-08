@@ -13,7 +13,7 @@
             <v-img
                 class="white--text align-end"
                 height="300px"
-                :src="book.src"
+                :src="book.src+'?cache=true'"
                 aspect-ratio="0.71"
                 contain
 
