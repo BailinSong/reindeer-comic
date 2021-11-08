@@ -1,41 +1,47 @@
 <template>
-  <v-container id="drag">
+<div id="drag">
+  <v-container  flex>
     <v-row class="text-center">
-      <v-col sm="6" md="4" lg="3" xl="2" v-for="book in books" :key="book.key">
+      <v-col sm="6" md="4" lg="3" xl="2" v-for="book in books" :key="book.path">
         <v-card
           class="mx-auto"
           max-width="300"
-          @click="open(book.path)"
           hover
           rounded
         >
-          <v-img
-            class="white--text align-end"
-            height="300px"
-            :src="book.src"
-            aspect-ratio="0.71"
-            contain
-          >
-          </v-img>
+          <div @click="open(book.path)">
+            <v-img
+                class="white--text align-end"
+                height="300px"
+                :src="book.src"
+                aspect-ratio="0.71"
+                contain
 
-          <v-card-subtitle class="pb-0"> </v-card-subtitle>
+            >
+            </v-img>
 
-          <v-card-text class="text--primary">
-            {{ book.title }}
-          </v-card-text>
+            <v-card-subtitle > </v-card-subtitle>
 
-          <!-- <v-card-actions>
-            <v-btn color="orange" text > 打开 </v-btn>
+            <v-card-text >
+              {{ book.title }}
+            </v-card-text>
+          </div>
 
-            <v-btn color="orange" text> 删除 </v-btn>
-          </v-card-actions> -->
+
+          <v-card-actions>
+               <v-btn color="orange" text @click="deleteBook(book)" > 删除 </v-btn>
+          </v-card-actions>
         </v-card>
       </v-col>
     </v-row>
   </v-container>
+</div>
 </template>
 
 <script>
+
+
+
 export default {
   name: "Library",
 
@@ -78,7 +84,7 @@ export default {
         bookList.push(element);
       });
 
-      ipcRenderer.send("writedb");
+      ipcRenderer.send("writedb",bookList);
     });
     ipcRenderer.send("readdb");
   },
@@ -87,6 +93,13 @@ export default {
       console.log(path);
       this.$emit("openBook-event", path);
     },
+    deleteBook(path){
+      let deleteIndex=this.books.indexOf(path)
+      this.books.splice(deleteIndex,1)
+
+      const { ipcRenderer } = require("electron")
+      ipcRenderer.send("writedb",this.books)
+    }
   },
 };
 </script>

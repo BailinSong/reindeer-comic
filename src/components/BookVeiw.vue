@@ -1,6 +1,5 @@
 <template>
   <v-container>
-    book veiw
     <v-row no-gutters>
       <v-col cols="12" v-for="file in files" :key="file">
         <v-img
