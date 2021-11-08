@@ -6,11 +6,12 @@ import installExtension, {VUEJS_DEVTOOLS} from 'electron-devtools-installer'
 import Zip from 'adm-zip'
 import fs from 'fs'
 import path from 'path'
+import os from 'os'
 
 const isDevelopment = process.env.NODE_ENV !== 'production'
 
 //const dbFilePath = ((isDevelopment) ? './library.db' : ((process.platform === 'darwin') ? '~/Library/Containers/ooo.reindeer.comic/Data/library.db' : './library.db'))
-const dbFilePath = ((process.platform === 'darwin') ? '~/Library/Containers/ooo.reindeer.comic/Data/library.db' : './library.db')
+const dbFilePath = ((process.platform === 'darwin') ? os.homedir()+'/Library/Containers/ooo.reindeer.comic/Data/library.db' : './library.db')
 
 
 // Scheme must be registered before the app is ready
