@@ -1,6 +1,6 @@
 'use strict'
 
-import {app, BrowserWindow, ipcMain, protocol,nativeTheme} from 'electron'
+import {app, BrowserWindow, ipcMain, protocol} from 'electron'
 import {createProtocol} from 'vue-cli-plugin-electron-builder/lib'
 import installExtension, {VUEJS_DEVTOOLS} from 'electron-devtools-installer'
 import Zip from 'adm-zip'
@@ -9,7 +9,8 @@ import path from 'path'
 
 const isDevelopment = process.env.NODE_ENV !== 'production'
 
-const dbFilePath = ((isDevelopment) ? './library.db' : ((process.platform === 'darwin') ? '～/Library/Containers/ooo.reindeer.comic/Data/library.db' : './library.db'))
+//const dbFilePath = ((isDevelopment) ? './library.db' : ((process.platform === 'darwin') ? '~/Library/Containers/ooo.reindeer.comic/Data/library.db' : './library.db'))
+const dbFilePath = ((process.platform === 'darwin') ? '~/Library/Containers/ooo.reindeer.comic/Data/library.db' : './library.db')
 
 
 // Scheme must be registered before the app is ready
@@ -17,9 +18,9 @@ protocol.registerSchemesAsPrivileged([
     {scheme: 'app', privileges: {secure: true, standard: true}},
 ])
 
-let db ={
-    confic:{},
-    books:[]
+let db = {
+    confic: {},
+    books: []
 }
 
 async function createWindow() {
@@ -46,7 +47,6 @@ async function createWindow() {
     // }
 
 
-
     // Create the browser window.
     const win = new BrowserWindow({
         useContentSize: true,
@@ -55,7 +55,7 @@ async function createWindow() {
         height: 600,
         minWidth: 357,
         minHeight: 400,
-        background:'#3a3a3a',
+        background: '#3a3a3a',
 
         webPreferences: {
 
@@ -154,14 +154,16 @@ app.on('ready', async () => {
 ipcMain.on('readdb', (event) => {
     try {
 
-        const dbFile = path.join(dbFilePath);
-
+        const dbFile = path.resolve(dbFilePath);
+        console.log(dbFile)
         if (!fs.existsSync(dbFile)) {
+            console.log(dbFile.substr(0, dbFile.lastIndexOf("/")))
+            mkdirsSync(path.dirname(dbFile))
             fs.writeFileSync(dbFile, '{}', {'flag': 'a'})
         }
 
         const data = fs.readFileSync(dbFile, 'utf-8');
-
+        console.log(dbFile)
 
         db = JSON.parse(data);
 
@@ -180,10 +182,10 @@ ipcMain.on('writedb', (event, arg) => {
 
     try {
 
-        db.books=arg;
+        db.books = arg;
 
-        const dbFile = path.join(dbFilePath)
-
+        const dbFile = path.resolve(dbFilePath)
+        console.log(dbFile)
         fs.writeFileSync(dbFile, JSON.stringify(db))
 
         event.reply('writedb-reply', true)
@@ -391,4 +393,15 @@ function nature(a, b) {
         return 0
     }
 
+}
+
+function mkdirsSync(dirname) {
+    if (fs.existsSync(dirname)) {
+        return true;
+    } else {
+        if (mkdirsSync(path.dirname(dirname))) {
+            fs.mkdirSync(dirname);
+            return true;
+        }
+    }
 }
