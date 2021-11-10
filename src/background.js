@@ -123,7 +123,10 @@ app.whenReady().then(() => {
     ) {
       zUrl = url.substr(0, idx + 4)
       eName = url.substr(idx + 5)
-    } else if (url.toLowerCase().startsWith('/')) {
+    }else if(url.toLowerCase().startsWith('//')){
+      zUrl = url.substr(0, idx + 4)
+      eName = url.substr(idx + 5)
+    }else if (url.toLowerCase().startsWith('/')) {
       if (process.platform === 'win32') {
         zUrl = url.substr(1, idx + 4)
       } else {
@@ -174,13 +177,6 @@ app.whenReady().then(() => {
             }
           }
         })
-      
-        
-       
-     
-      
-
-      
     }else{
       if (cache.zipName !== zUrl) {
         cache.zipName = zUrl
@@ -267,43 +263,86 @@ ipcMain.on('writedb', (event, arg) => {
 
 ipcMain.on('addBooks', (event, arg) => {
 
-  let books = [];
 
-  for (let index in arg) {
+  arg.forEach(element => {
     let book = {}
-    let protocol = "file://";
-    if (!arg[index].startsWith('/')) {
-      protocol = protocol + '/'
-    }
-    book.path = arg[index].replace('\\', '/')
-    let bookInfo = fs.lstatSync(book.path)
+    
+    book.path = element.replace(/\\/g, '/')
+
+    console.log('add book: '+book.path)
+
+    book.addDate=Date.now()
+    fs.lstat(book.path,(err,info)=>{
+
+      let bookInfo=info
+
+      if (bookInfo.isDirectory()) {
+
+        book.title = path.basename(book.path)
+
+        let dirImages = getImageListByDir(book.path);
+  
+        if (dirImages.length < 1) return
+        book.src = dirImages[0]
+        event.sender.send('addBooks-reply',book)
+    
+      } else if (book.path.toLowerCase().endsWith('.zip')) {
+  
+        book.title = path.basename(book.path, '.zip')
+  
+        let zipImage = getImageListByZip(book.path);
+  
+        if (zipImage.length < 1) return
+        book.src = zipImage[0]
+        event.sender.send('addBooks-reply',book)
+    
+      }
+    })
+
+  
 
 
-    if (bookInfo.isDirectory()) {
+    
+  });
+  
 
-      book.title = path.basename(book.path)
-      let dirImages = getImageListByDir(book.path);
 
-      if (dirImages.length < 1) return
-      book.src = dirImages[0]
+  
 
-      books.push(book);
-    } else if (book.path.toLowerCase().endsWith('.zip')) {
+  // for (let index in arg) {
+  //   let book = {}
+  //   let protocol = "file://";
+  //   if (!arg[index].startsWith('/')) {
+  //     protocol = protocol + '/'
+  //   }
+  //   book.path = arg[index].replace('\\', '/')
+  //   let bookInfo = fs.lstatSync(book.path)
 
-      book.title = path.basename(book.path, '.zip')
 
-      let zipImage = getImageListByZip(book.path);
+  //   if (bookInfo.isDirectory()) {
 
-      if (zipImage.length < 1) return
-      book.src = zipImage[0]
+  //     book.title = path.basename(book.path)
+  //     let dirImages = getImageListByDir(book.path);
 
-      books.push(book);
-    }
+  //     if (dirImages.length < 1) return
+  //     book.src = dirImages[0]
+  //     event.sender.send('addBooks-reply',book)
+  //     books.push(book);
+  //   } else if (book.path.toLowerCase().endsWith('.zip')) {
+
+  //     book.title = path.basename(book.path, '.zip')
+
+  //     let zipImage = getImageListByZip(book.path);
+
+  //     if (zipImage.length < 1) return
+  //     book.src = zipImage[0]
+  //     event.sender.send('addBooks-reply',book)
+  //     books.push(book);
+  //   }
    
-
-
-  }
-  event.reply('addBooks-reply', books)
+  // }
+  
+  // event.reply('addBooks-reply', books)
   // {
   //   key:"1234-09878",
   //   path":"Z:/漫画/[ポンスケ] ちびっこエッチ [中国翻译].zip",
@@ -314,11 +353,12 @@ ipcMain.on('addBooks', (event, arg) => {
 })
 
 function getImageListByZip(arg) {
-  console.log('ImageListByZip:' + arg)
+  let bookPath=arg.replace(/\\/g,'/')
+  console.log('ImageListByZip:' + bookPath)
   let protocol = ''
   let imageList = []
-  let zip = new Zip(arg);
-
+  
+  let zip = new Zip(bookPath);
   let zipEntries = zip.getEntries();
 
   for (let index in zipEntries) {
@@ -330,10 +370,9 @@ function getImageListByZip(arg) {
         if (!arg.startsWith('/')) {
           protocol = protocol + '/'
         }
-        imageList.push(protocol + arg.replace('\\', '/') + '/' + zipEntry.entryName.toString())
+        imageList.push(protocol + bookPath + '/' + zipEntry.entryName.toString())
       }
     }
-
   }
   imageList = orderImage(imageList)
   return imageList;

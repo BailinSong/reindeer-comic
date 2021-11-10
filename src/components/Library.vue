@@ -81,12 +81,13 @@ export default {
     });
     ipcRenderer.on("addBooks-reply", (event, arg) => {
       console.log("addBooks-reply" + arg);
-      arg.forEach((element) => {
-        bookList.push(element);
-      });
+      // arg.forEach((element) => {
+        bookList.push(arg);
+      // });
 
       ipcRenderer.send("writedb",bookList);
     });
+    
     ipcRenderer.send("readdb");
   },
   methods: {
