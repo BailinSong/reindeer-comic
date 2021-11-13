@@ -1,8 +1,11 @@
 <template>
   <v-app>
-    <v-main>
-      <Library @openBook-event="openBookVeiw" v-if="!this.openBook"></Library>
-      <book-veiw :bookPath='bookPath' v-else></book-veiw>
+    <v-main v-scroll="onScroll">
+      <Library
+        @openBook-event="openBookVeiw"
+        v-show="showLibrary"
+      ></Library>
+      <BookVeiw :bookPath="bookPath" v-if="showBookVeiw"></BookVeiw>
     </v-main>
   </v-app>
 </template>
@@ -17,21 +20,37 @@ export default {
     return {
       bookPath: "",
       openBook: false,
+      offset: 0,
     };
   },
-  computed: {},
+  computed: {
+    showLibrary() {
+      if (!this.openBook) {
+        this.$vuetify.goTo(this.offset, {
+          duration: 300,
+          offset: 0,
+          easing: "easeInOutCubic",
+        });
+      }
+
+      return !this.openBook;
+    },
+    showBookVeiw() {
+      return this.openBook;
+    },
+  },
   mounted() {
     document.onkeyup = (event) => {
       event.key;
       console.log(event.key);
       if (event.key == "Escape") {
         console.log("UP:" + event.key);
-        this.bookPath = "";
+
         this.openBook = false;
       }
 
-      if(event.ctrlKey&&event.key=='t')
-        this.$vuetify.theme.dark=!this.$vuetify.theme.dark
+      if (event.ctrlKey && event.key == "t")
+        this.$vuetify.theme.dark = !this.$vuetify.theme.dark;
     };
   },
 
@@ -41,6 +60,11 @@ export default {
 
       this.bookPath = bookPath;
       this.openBook = true;
+    },
+    onScroll() {
+      if (this.showLibrary) {
+        this.offset = document.documentElement.scrollTop;
+      }
     },
   },
 };

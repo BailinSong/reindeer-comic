@@ -3,19 +3,20 @@
 import { app, BrowserWindow, ipcMain, protocol } from 'electron'
 import { createProtocol } from 'vue-cli-plugin-electron-builder/lib'
 import installExtension, { VUEJS_DEVTOOLS } from 'electron-devtools-installer'
-import Zip from 'adm-zip'
 import fs from 'fs'
 import path from 'path'
 import os from 'os'
-import crypto from'crypto'
+import StreamZip from 'node-stream-zip'
+import Utils from './plugins/Utils'
+
 
 const isDevelopment = process.env.NODE_ENV !== 'production'
 
 //const dbFilePath = ((isDevelopment) ? './library.db' : ((process.platform === 'darwin') ? '~/Library/Containers/ooo.reindeer.comic/Data/library.db' : './library.db'))
-const cachePath=((process.platform === 'darwin') ? os.homedir() + '/Library/Containers/ooo.reindeer.comic/Data/cache' : './cache')
+// const cachePath = ((process.platform === 'darwin') ? os.homedir() + '/Library/Containers/ooo.reindeer.comic/Data/cache' : './cache')
 const dbFilePath = ((process.platform === 'darwin') ? os.homedir() + '/Library/Containers/ooo.reindeer.comic/Data/library.db' : './library.db')
 
-mkdirsSync(cachePath)
+// mkdirsSync(cachePath)
 mkdirsSync(path.dirname(dbFilePath))
 
 // Scheme must be registered before the app is ready
@@ -23,15 +24,11 @@ protocol.registerSchemesAsPrivileged([
   { scheme: 'app', privileges: { secure: true, standard: true } },
 ])
 
-const cache = {
-  zipName: '',
-  zipCache: {}
-}
-
 let db = {
   confic: {},
   books: []
 }
+
 
 async function createWindow() {
 
@@ -112,7 +109,7 @@ app.whenReady().then(() => {
   protocol.registerBufferProtocol('zip', (request, callback) => {
 
     console.log(request.url)
-
+    const pCallback = callback
     const url = decodeURI(request.url.substr(6));
     const idx = url.toLowerCase().indexOf('.zip/');
     let eName;
@@ -123,10 +120,10 @@ app.whenReady().then(() => {
     ) {
       zUrl = url.substr(0, idx + 4)
       eName = url.substr(idx + 5)
-    }else if(url.toLowerCase().startsWith('//')){
+    } else if (url.toLowerCase().startsWith('//')) {
       zUrl = url.substr(0, idx + 4)
       eName = url.substr(idx + 5)
-    }else if (url.toLowerCase().startsWith('/')) {
+    } else if (url.toLowerCase().startsWith('/')) {
       if (process.platform === 'win32') {
         zUrl = url.substr(1, idx + 4)
       } else {
@@ -141,59 +138,23 @@ app.whenReady().then(() => {
 
     // var Zip = require('adm-zip');
 
-    
 
-    var cacheFace=eName.split('?cache=')
+
+    var cacheFace = eName.split('?cache=')
     console.log(cacheFace)
- 
 
-    if(cacheFace[1]){
-     
-      var result = crypto.createHash('md5').update(url).digest("hex")
-      
-      var cacheFile=path.resolve(cachePath+'/'+result)
-      
-     
-        fs.stat(cacheFile,(err,stats)=>{
-          if(err){
-            if (cache.zipName !== zUrl) {
-              cache.zipName = zUrl
-              cache.zipCache = new Zip(zUrl)
-            }
-            cache.zipCache.readFileAsync(cacheFace[0],(buff,err)=>{
-              console.log('create zip image cache err:'+err)
-              callback({
-                data: buff
-              })
-              fs.writeFile(path.resolve(cachePath+'/'+result),buff,()=>{})
-            })
-          }else{
-            if(stats.isFile()){
-              fs.readFile(path.resolve(cachePath+'/'+result),(err,buff)=>{
-                callback({
-                  data: buff
-                })
-              })
-            }
-          }
-        })
-    }else{
-      if (cache.zipName !== zUrl) {
-        cache.zipName = zUrl
-        cache.zipCache = new Zip(zUrl)
-      }
-      console.log('read zip image:'+cacheFace[0])
-      cache.zipCache.readFileAsync(cacheFace[0],(buff,err)=>{
-        console.log('read zip image err:'+err)
-        
-        callback({
-          data: buff
-        })
+
+    const zip = new StreamZip({ file: zUrl });
+
+    zip.on('ready', () => {
+
+      const data = zip.entryDataSync(cacheFace[0]);
+      pCallback({
+        data: data
       })
-      
-    }
+      zip.close()
+    });
 
-    
   }, function (error) {
     if (error)
       console.error('Failed to register protocol')
@@ -220,7 +181,7 @@ ipcMain.on('readdb', (event) => {
   try {
 
     const dbFile = path.resolve(dbFilePath);
-    console.log(dbFile)
+    console.log('readdb' + dbFile)
     if (!fs.existsSync(dbFile)) {
       console.log(dbFile.substr(0, dbFile.lastIndexOf("/")))
       mkdirsSync(path.dirname(dbFile))
@@ -228,22 +189,24 @@ ipcMain.on('readdb', (event) => {
     }
 
     const data = fs.readFileSync(dbFile, 'utf-8');
-    console.log(dbFile)
-
     db = JSON.parse(data);
+    if (db.books) {
+      db.books.sort((A, B) => {
+        return nature(A.title, B.title)
+      })
+      event.reply('readdb-reply', db.books)
+    }
 
-    db.books.sort((A, B) => {
     
-      return nature(A.title, B.title)
-    })
-
-    event.reply('readdb-reply', db.books)
   } catch (err) {
     console.log(err)
   }
 })
 
-ipcMain.on('writedb', (event, arg) => {
+
+
+
+ipcMain.on('writedb', Utils.deBounce((event, arg) => {
 
   try {
 
@@ -259,123 +222,79 @@ ipcMain.on('writedb', (event, arg) => {
     event.reply('writedb-reply', false)
 
   }
-})
+}, 1000))
 
 ipcMain.on('addBooks', (event, arg) => {
 
 
   arg.forEach(element => {
     let book = {}
-    
+
     book.path = element.replace(/\\/g, '/')
 
-    console.log('add book: '+book.path)
+    console.log('add book: ' + book.path)
 
-    book.addDate=Date.now()
-    fs.lstat(book.path,(err,info)=>{
+    book.addDate = Date.now()
+    fs.lstat(book.path, (err, info) => {
 
-      let bookInfo=info
+      let bookInfo = info
 
       if (bookInfo.isDirectory()) {
 
         book.title = path.basename(book.path)
 
         let dirImages = getImageListByDir(book.path);
-  
+
         if (dirImages.length < 1) return
         book.src = dirImages[0]
-        event.sender.send('addBooks-reply',book)
-    
+        event.sender.send('addBooks-reply', book)
+
       } else if (book.path.toLowerCase().endsWith('.zip')) {
-  
+
         book.title = path.basename(book.path, '.zip')
-  
-        let zipImage = getImageListByZip(book.path);
-  
-        if (zipImage.length < 1) return
-        book.src = zipImage[0]
-        event.sender.send('addBooks-reply',book)
-    
+
+        getImageListByZip(book.path, (zipImages) => {
+          if (zipImages.length < 1) return
+          book.src = zipImages[0]
+          event.sender.send('addBooks-reply', book)
+        });
       }
     })
-
-  
-
-
-    
   });
-  
-
-
-  
-
-  // for (let index in arg) {
-  //   let book = {}
-  //   let protocol = "file://";
-  //   if (!arg[index].startsWith('/')) {
-  //     protocol = protocol + '/'
-  //   }
-  //   book.path = arg[index].replace('\\', '/')
-  //   let bookInfo = fs.lstatSync(book.path)
-
-
-  //   if (bookInfo.isDirectory()) {
-
-  //     book.title = path.basename(book.path)
-  //     let dirImages = getImageListByDir(book.path);
-
-  //     if (dirImages.length < 1) return
-  //     book.src = dirImages[0]
-  //     event.sender.send('addBooks-reply',book)
-  //     books.push(book);
-  //   } else if (book.path.toLowerCase().endsWith('.zip')) {
-
-  //     book.title = path.basename(book.path, '.zip')
-
-  //     let zipImage = getImageListByZip(book.path);
-
-  //     if (zipImage.length < 1) return
-  //     book.src = zipImage[0]
-  //     event.sender.send('addBooks-reply',book)
-  //     books.push(book);
-  //   }
-   
-  // }
-  
-  // event.reply('addBooks-reply', books)
-  // {
-  //   key:"1234-09878",
-  //   path":"Z:/漫画/[ポンスケ] ちびっこエッチ [中国翻译].zip",
-  //   src":"zip:///Z:/漫画/[ポンスケ] ちびっこエッチ [中国翻译].zip/001.png",
-  //   title":"[ポンスケ] ちびっこエッチ [中国翻译]"
-  // }
 
 })
 
-function getImageListByZip(arg) {
-  let bookPath=arg.replace(/\\/g,'/')
+
+function getImageListByZip(arg, callback) {
+  const bookPath = arg.replace(/\\/g, '/')
+  const pCallback = callback
   console.log('ImageListByZip:' + bookPath)
   let protocol = ''
   let imageList = []
-  
-  let zip = new Zip(bookPath);
-  let zipEntries = zip.getEntries();
 
-  for (let index in zipEntries) {
-    const zipEntry = zipEntries[index];
-    if (isImage(zipEntry.entryName.toString())) {
+  const zip = new StreamZip({ file: bookPath });
 
-      if (zipEntry.isDirectory === false) {
-        protocol = "zip://"
-        if (!arg.startsWith('/')) {
-          protocol = protocol + '/'
+  zip.on('ready', () => {
+    // console.log('Entries read: ' + zip.entriesCount);
+    for (const entry of Object.values(zip.entries())) {
+      if (isImage(entry.name)) {
+
+        if (entry.isDirectory === false) {
+          protocol = "zip://"
+          if (!arg.startsWith('/')) {
+            protocol = protocol + '/'
+          }
+          imageList.push(protocol + bookPath + '/' + entry.name)
         }
-        imageList.push(protocol + bookPath + '/' + zipEntry.entryName.toString())
       }
     }
-  }
-  imageList = orderImage(imageList)
-  return imageList;
+    // Do not forget to close the file once you're done
+    zip.close();
+    pCallback(orderImage(imageList))
+
+  });
+
+
 }
 
 function getImageListByDir(arg) {
@@ -406,23 +325,24 @@ function getImageListByDir(arg) {
 
 ipcMain.on('readfs', (event, arg) => {
 
+  const pEvent = event;
   let fullPathFiles;
 
   if (arg.toLowerCase().endsWith('.zip')) {
     // var Zip = require('adm-zip');
 
 
-    fullPathFiles = getImageListByZip(arg);
+    getImageListByZip(arg, (fullPasths) => {
+      pEvent.reply('readfs-reply', fullPasths)
+    });
 
   } else {
 
-
     fullPathFiles = getImageListByDir(arg);
-
-
+    pEvent.reply('readfs-reply', fullPathFiles)
   }
 
-  event.reply('readfs-reply', fullPathFiles)
+
 
 })
 

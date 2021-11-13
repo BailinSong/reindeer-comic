@@ -2,8 +2,8 @@
   <v-container>
     <v-row no-gutters>
       <v-col cols="12" v-for="file in files" :key="file">
-        <v-img
-          style="display: flex; justify-content: space-around"
+        <v-img 
+          style="display: flex; justify-content: space-around;filter:  contrast(100%) blur(0.5px) brightness(100%) saturate(100%)"
           flex
           :src="file"
           contain
@@ -31,11 +31,9 @@ export default {
   mounted() {
     const { ipcRenderer } = require("electron");
 
-    console.log(this.files);
-
     let fileList = this.files;
-    ipcRenderer.on("readfs-reply", (event, arg) => {
-      fileList.slice(0, 0);
+    ipcRenderer.once("readfs-reply", (event, arg) => {
+      fileList.slice(0, -1);
       arg.forEach((element) => {
         fileList.push(element);
       });

@@ -13,9 +13,8 @@
   },
   "main": "background.js",
   "dependencies": {
-    "adm-zip": "^0.5.9",
     "core-js": "^3.6.5",
-    "crypto": "^1.0.1",
+    "node-stream-zip": "^1.15.0",
     "vue": "^2.6.11",
     "vuetify": "^2.4.0"
   },
