@@ -78,5 +78,4 @@ jobs:
         uses: xresloader/upload-to-github-release@v1.3.2
         with:
           file: artifacts/*
-          tags: ${{ github.event.release.tag_name }}
           update_latest_release: true
