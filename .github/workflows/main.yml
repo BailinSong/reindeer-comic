@@ -15,7 +15,8 @@ jobs:
     # The type of runner that the job will run on
     runs-on: ${{ matrix.os }}
     env:
-      GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+      GH_TOKEN: ${{ secrets.GH_TOKEN }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     # windows-2019, macos-10.15, ubuntu-18.04
     strategy:
       fail-fast: false
@@ -70,7 +71,12 @@ jobs:
           path: artifacts
           
           
+ #     - name: Upload Release Asset
+ #       run: gh release upload ${{ github.event.release.tag_name }} ./artifacts/*
+ 
       - name: Upload Release Asset
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release upload ${{ github.event.release.tag_name }} artifacts
+        uses: xresloader/upload-to-github-release@v1.3.2
+        with:
+          file: artifacts/*
+          tags: ${{ github.event.release.tag_name }}
+          update_latest_release: true
