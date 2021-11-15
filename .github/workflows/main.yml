@@ -56,12 +56,12 @@ jobs:
         if: matrix.os == 'windows-2019'
         run: |
           mkdir artifacts
-          mv release/*.exe artifacts || true
+          mv dist_electron/*.exe artifacts || true
       - name: cleanup artifacts for macosZ
         if: matrix.os == 'macos-10.15'
         run: |
           mkdir artifacts
-          mv release/*.dmg artifacts || true
+          mv dist_electron/*.dmg artifacts || true
           
       - name: upload artifacts
         uses: actions/upload-artifact@v2
