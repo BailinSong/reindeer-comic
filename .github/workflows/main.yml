@@ -58,7 +58,7 @@ jobs:
         run: |
           mkdir artifacts
           mv dist_electron/*.exe artifacts || true
-      - name: cleanup artifacts for macosZ
+      - name: cleanup artifacts for macos
         if: matrix.os == 'macos-10.15'
         run: |
           mkdir artifacts
@@ -71,11 +71,13 @@ jobs:
           path: artifacts
           
           
- #     - name: Upload Release Asset
- #       run: gh release upload ${{ github.event.release.tag_name }} ./artifacts/*
+      - name: Upload Release Asset Macos
+        if: matrix.os == 'macos-10.15'
+        run: gh release upload ${{ github.event.release.tag_name }} ./artifacts/*
  
-      - name: Upload Release Asset
-        uses: xresloader/upload-to-github-release@v1.3.2
+      - name: Upload Release Asset windows
+        if: matrix.os == 'windows-2019'
+        uses: alexellis/upload-assets@0.3.0
         with:
-          file: artifacts/*
-          update_latest_release: true
+          asset_paths: ./artifacts/*
+
