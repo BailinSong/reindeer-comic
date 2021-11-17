@@ -24,7 +24,7 @@ yarn lint
 ```
 ### Change log
 
-## [Unreleased]
+## [1.1.0]
 - 自定义标签
 - 搜索标题及标签
 
