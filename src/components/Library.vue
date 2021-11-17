@@ -1,62 +1,108 @@
 <template>
-  <div>
-    <!-- <v-app-bar app>
+  <div style="height: 100%; width: 100%">
+    <v-app-bar app>
       <v-combobox
-        v-model="chips"
-        :items="items"
-        chips
-        clearable
-        label="搜索"
-        multiple
-        solo
+
+          v-model="chips"
+          :items="items"
+          clearable
+          dense
+          hide-details
+          hide-no-data
+          hide-selected
+          multiple
+          prepend-icon="mdi-magnify"
+          single-line
+          small-chips
       >
         <template v-slot:selection="{ attrs, item, select, selected }">
           <v-chip
-            v-bind="attrs"
-            :input-value="selected"
-            close
-            @click="select"
-            @click:close="remove(item)"
+              :color="getColor(item)"
+              :input-value="selected"
+              close
+              small
+              v-bind="attrs"
+              @click="select"
+              @click:close="remove(item)"
           >
             <strong>{{ item }}</strong>
           </v-chip>
         </template>
       </v-combobox>
-    </v-app-bar> -->
+    </v-app-bar>
 
-    <div style="height: 100%; width: 100%" id="drag">
+    <div id="drag" style="height: 100%; width: 100%">
       <v-container flex>
         <v-row class="text-center">
           <v-col
-            sm="6"
-            md="4"
-            lg="3"
-            xl="2"
-            v-for="book in showBooks"
-            :key="book.path"
-            v-show="find(book)"
+              v-for="book in showBooks"
+              v-show="find(book)"
+              :key="book.path"
+              lg="3"
+              md="4"
+              sm="6"
+              xl="2"
           >
-            <v-card class="mx-auto" max-width="300" hover rounded>
+            <v-card class="mx-auto" hover max-width="300" rounded>
               <div @click="open(book.path)">
                 <v-img
-                  class="white--text align-end"
-                  height="300px"
-                  :src="book.src + '?cache=true'"
-                  aspect-ratio="0.71"
-                  contain
+                    :src="book.src + '?cache=true'"
+                    aspect-ratio="0.71"
+                    class="white--text align-end"
+                    contain
+                    height="300px"
                 >
                 </v-img>
 
-                <v-card-subtitle> </v-card-subtitle>
-
-                <v-card-text>
+                <v-card-title>
                   {{ book.title }}
-                </v-card-text>
+                </v-card-title>
               </div>
+              <v-card-subtitle>
+                <!-- <v-chip
+                  small
+                  v-for="tag in book.tags"
+                  :key="tag"
+                  @click="chips.push(tag)"
+                  :color="getColor(tag)"
+                >
+                  <strong>{{ tag }}</strong>
+                </v-chip> -->
 
-              <v-card-actions>
+                <v-combobox
+
+                    v-model="book.tags"
+                    dense
+                    hide-details
+                    hide-no-data
+                    hide-selected
+                    label="Tag"
+                    multiple
+                    small-chips
+                    @change="save"
+
+                >
+                  <template
+                      v-slot:selection="{ attrs, item, select, selected }"
+                  >
+                    <v-chip
+                        :color="getColor(item)"
+                        :input-value="selected"
+                        close
+                        small
+                        v-bind="attrs"
+                        @click="select&chips.push(item)"
+                        @click:close="removeTag(book,item)"
+
+                    >
+                      <strong>{{ item }}</strong>
+                    </v-chip>
+                  </template>
+                </v-combobox>
+              </v-card-subtitle>
+              <v-card-actions align-self="center">
                 <v-btn color="orange" text @click="deleteBook(book)">
-                  删除
+                  <v-icon>mdi-delete</v-icon>
                 </v-btn>
               </v-card-actions>
             </v-card>
@@ -77,6 +123,13 @@ export default {
     chips: [],
     items: [],
   }),
+  // watch: {
+  //   chips: {
+  //     handler(newValue, oldvalue) {
+  //       console.log(newValue + ":" + oldvalue);
+  //     },
+  //   },
+  // },
   destroyed() {
     console.log("library destroyed:" + this.bookPath);
   },
@@ -84,7 +137,7 @@ export default {
     console.log("library mounted:" + this.bookPath);
 
     this.$vuetify.dark = true;
-    const { ipcRenderer } = require("electron");
+    const {ipcRenderer} = require("electron");
 
     let wrapper = document.getElementById("drag");
 
@@ -112,6 +165,7 @@ export default {
       bookList.slice(0, bookList.length);
       arg.forEach((element) => {
         bookList.push(element);
+        this.items.push(element.title);
       });
 
       // $vuetify.goTo(target, options)
@@ -122,6 +176,7 @@ export default {
 
       this.addBookList.forEach((element) => {
         this.books.push(element);
+        this.items.push(element.title);
       });
       this.addBookList.slice(0, -1);
       ipcRenderer.send("writedb", this.books);
@@ -143,17 +198,22 @@ export default {
       console.log(this.books.length);
       return this.books;
     },
-    find(){
-      return function (book){
+    find() {
+      return function (book) {
         let match = true;
-        this.chips.forEach(chip=> {
-          if (book.Path.indexOf(chip) < 0) {
+        this.chips.forEach((chip) => {
+          if (book.tags) {
+            console.log(book.tags.indexOf(chip));
+          }
+          if (
+              book.title.toLowerCase().indexOf(chip.toLowerCase()) < 0 &&
+              (!book.tags || book.tags.indexOf(chip) < 0)
+          ) {
             match = false;
           }
-        })
-        console.log(match)
-        return match
-      }
+        });
+        return match;
+      };
     },
   },
   methods: {
@@ -165,11 +225,11 @@ export default {
       let deleteIndex = this.books.indexOf(path);
       this.books.splice(deleteIndex, 1);
 
-      const { ipcRenderer } = require("electron");
+      const {ipcRenderer} = require("electron");
       ipcRenderer.send("writedb", this.books);
     },
     deBounce(fn, delay) {
-      let space = new Object();
+      let space = {};
       space.timer = {};
       space.callback = function () {
         const args = Array.prototype.map.call(arguments, (val) => val);
@@ -178,11 +238,11 @@ export default {
           clearTimeout(space.timer);
         }
         space.timer = setTimeout(
-          () => {
-            typeof fn === "function" && fn.apply(null, args);
-            clearTimeout(space.timer);
-          },
-          delay > 0 ? delay : 100
+            () => {
+              typeof fn === "function" && fn.apply(null, args);
+              clearTimeout(space.timer);
+            },
+            delay > 0 ? delay : 100
         );
       };
       return space.callback;
@@ -190,7 +250,30 @@ export default {
     remove(item) {
       this.chips.splice(this.chips.indexOf(item), 1);
       this.chips = [...this.chips];
+    }, removeTag(book, item) {
+      book.tags.splice(book.tags.indexOf(item), 1);
+      book.tags = [...book.tags];
     },
+    getColor(str) {
+      var hash = 0,
+          i,
+          chr,
+          len;
+      if (str.length === 0) return hash;
+      for (i = 0, len = str.length; i < len; i++) {
+        chr = str.charCodeAt(i);
+        hash = (hash << 5) - hash + chr;
+        hash |= 0; // Convert to 32bit integer
+      }
+
+      let color = "FFFFFF" + hash.toString(16);
+      color = "#" + color.substring(color.length - 6);
+      console.log(color);
+      return color;
+    }, save() {
+      const {ipcRenderer} = require("electron");
+      ipcRenderer.send("writedb", this.books);
+    }
   },
 };
 </script>

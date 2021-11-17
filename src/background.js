@@ -1,8 +1,8 @@
 'use strict'
 
-import { app, BrowserWindow, ipcMain, protocol } from 'electron'
-import { createProtocol } from 'vue-cli-plugin-electron-builder/lib'
-import installExtension, { VUEJS_DEVTOOLS } from 'electron-devtools-installer'
+import {app, BrowserWindow, ipcMain, Menu, protocol} from 'electron'
+import {createProtocol} from 'vue-cli-plugin-electron-builder/lib'
+import installExtension, {VUEJS_DEVTOOLS} from 'electron-devtools-installer'
 import fs from 'fs'
 import path from 'path'
 import os from 'os'
@@ -15,6 +15,8 @@ const isDevelopment = process.env.NODE_ENV !== 'production'
 //const dbFilePath = ((isDevelopment) ? './library.db' : ((process.platform === 'darwin') ? '~/Library/Containers/ooo.reindeer.comic/Data/library.db' : './library.db'))
 // const cachePath = ((process.platform === 'darwin') ? os.homedir() + '/Library/Containers/ooo.reindeer.comic/Data/cache' : './cache')
 const dbFilePath = ((process.platform === 'darwin') ? os.homedir() + '/Library/Containers/ooo.reindeer.comic/Data/library.db' : './library.db')
+
+
 
 // mkdirsSync(cachePath)
 mkdirsSync(path.dirname(dbFilePath))
@@ -55,6 +57,9 @@ async function createWindow() {
 
 
   // Create the browser window.
+
+  Menu.setApplicationMenu(null)
+
   const win = new BrowserWindow({
     useContentSize: true,
     // frame: false,
