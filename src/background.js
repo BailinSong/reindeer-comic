@@ -189,14 +189,18 @@ app.on('ready', async () => {
 
 ipcMain.on('readBooks', (event) => {
 
-    const dbFile = path.resolve(dbFilePath);
-    if (fs.existsSync(dbFile)){
-        const data = fs.readFileSync(dbFile, 'utf-8');
+
+    if (fs.existsSync(dbFilePath)){
+
+        console.info('has old db file')
+
+        const data = fs.readFileSync(dbFilePath, 'utf-8');
+        console.info(data)
         let books=JSON.parse(data).books;
         books.forEach((book)=>{
             bookDB.insert(book)
         })
-        fs.unlinkSync(dbFile)
+        fs.unlinkSync(dbFilePath)
     }
 
 
