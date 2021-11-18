@@ -37,7 +37,7 @@
           <v-col
               v-for="book in showBooks"
               v-show="find(book)"
-              :key="book.path"
+              :key="book._id"
               lg="3"
               md="4"
               sm="6"
@@ -54,21 +54,11 @@
                 >
                 </v-img>
 
-                <v-card-title>
+                <v-card-title dense>
                   {{ book.title }}
                 </v-card-title>
               </div>
               <v-card-subtitle>
-                <!-- <v-chip
-                  small
-                  v-for="tag in book.tags"
-                  :key="tag"
-                  @click="chips.push(tag)"
-                  :color="getColor(tag)"
-                >
-                  <strong>{{ tag }}</strong>
-                </v-chip> -->
-
                 <v-combobox
 
                     v-model="book.tags"
@@ -79,7 +69,7 @@
                     label="Tag"
                     multiple
                     small-chips
-                    @change="save"
+                    @change="save(book)"
 
                 >
                   <template
@@ -114,6 +104,9 @@
 </template>
 
 <script>
+
+import {ipcRenderer} from "electron";
+
 export default {
   name: "Library",
   data: () => ({
@@ -137,17 +130,15 @@ export default {
     console.log("library mounted:" + this.bookPath);
 
     this.$vuetify.dark = true;
-    const {ipcRenderer} = require("electron");
+    // const {ipcRenderer} = require("electron");
 
     let wrapper = document.getElementById("drag");
 
     wrapper.addEventListener("drop", (event) => {
       event.preventDefault();
       if (event.dataTransfer.files.length > 0) {
-        // var files = [];
-        for (var i = 0; i < event.dataTransfer.files.length; i++) {
-          // console.log(event.dataTransfer.files[i]);
-          // files.push(event.dataTransfer.files[i].path);
+
+        for (let i = 0; i < event.dataTransfer.files.length; i++) {
           ipcRenderer.send("addBooks", [event.dataTransfer.files[i].path]);
         }
       }
@@ -159,7 +150,7 @@ export default {
 
     let bookList = this.books;
 
-    ipcRenderer.on("readdb-reply", (event, arg) => {
+    ipcRenderer.on("readBooks-reply", (event, arg) => {
       // console.log("readdb-reply" + arg);
 
       bookList.slice(0, bookList.length);
@@ -179,7 +170,6 @@ export default {
         this.items.push(element.title);
       });
       this.addBookList.slice(0, -1);
-      ipcRenderer.send("writedb", this.books);
     }, 1000);
 
     ipcRenderer.on("addBooks-reply", (event, arg) => {
@@ -190,7 +180,7 @@ export default {
       finshAddBook();
     });
 
-    ipcRenderer.send("readdb");
+    ipcRenderer.send("readBooks");
   },
 
   computed: {
@@ -221,12 +211,10 @@ export default {
       // console.log(path);
       this.$emit("openBook-event", path);
     },
-    deleteBook(path) {
-      let deleteIndex = this.books.indexOf(path);
+    deleteBook(book) {
+      let deleteIndex = this.books.indexOf(book);
       this.books.splice(deleteIndex, 1);
-
-      const {ipcRenderer} = require("electron");
-      ipcRenderer.send("writedb", this.books);
+      ipcRenderer.send("deleteBook", book);
     },
     deBounce(fn, delay) {
       let space = {};
@@ -253,6 +241,7 @@ export default {
     }, removeTag(book, item) {
       book.tags.splice(book.tags.indexOf(item), 1);
       book.tags = [...book.tags];
+      ipcRenderer.send("updateBook", book);
     },
     getColor(str) {
       var hash = 0,
@@ -270,9 +259,8 @@ export default {
       color = "#" + color.substring(color.length - 6);
       console.log(color);
       return color;
-    }, save() {
-      const {ipcRenderer} = require("electron");
-      ipcRenderer.send("writedb", this.books);
+    }, save(book) {
+      ipcRenderer.send("updateBook", book);
     }
   },
 };
