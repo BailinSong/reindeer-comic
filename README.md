@@ -1,6 +1,6 @@
 # reindeer-comic
 
-漫画浏览工具
+漫画浏览器
 
 
 ## Project setup
