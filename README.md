@@ -1,6 +1,12 @@
 # reindeer-comic
 
 漫画浏览器
+* 拖拽漫画到主界面加入漫画
+* 支持本地/局域网漫画漫画
+* 支持图片文件夹和zip包漫画书
+* 支持 ctrl+t 切换主题
+* 浏览漫画界面使用 esc 返回主界面
+* webtoon风格浏览漫画
 
 
 ## Project setup
