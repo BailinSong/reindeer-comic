@@ -15,7 +15,7 @@ const isDevelopment = process.env.NODE_ENV !== 'production'
 //const dbFilePath = ((isDevelopment) ? './library.db' : ((process.platform === 'darwin') ? '~/Library/Containers/ooo.reindeer.comic/Data/library.db' : './library.db'))
 // const cachePath = ((process.platform === 'darwin') ? os.homedir() + '/Library/Containers/ooo.reindeer.comic/Data/cache' : './cache')
 const dbFilePath = ((process.platform === 'darwin') ? os.homedir() + '/Library/Containers/ooo.reindeer.comic/Data/library.db' : './library.db')
-const ndbFilePath = ((process.platform === 'darwin') ? os.homedir() + '/Library/Containers/ooo.reindeer.comic/Data/library.ndb' : './library.ndb')
+const ndbFilePath = ((process.platform === 'darwin') ? os.homedir() + '/Library/Containers/ooo.reindeer.comic/Data/library.ndb' : os.homedir() +'/AppData/Local/reindeer-comic/Data/library.ndb')
 
 const bookDB = new NeDB({
     filename: ndbFilePath,
