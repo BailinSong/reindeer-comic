@@ -1,5 +1,5 @@
 <template>
-  <v-container @mousewheel.ctrl="handleZoom" @keydown.ctrl="lockX">
+  <v-container @mousewheel.ctrl="handleZoom">
     <v-row no-gutters  ref="viewContainer" >
       <v-col cols="12" align="center" v-for="file in files" :key="file" >
         <v-img
