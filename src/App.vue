@@ -52,6 +52,8 @@ export default {
 
       if (event.ctrlKey && event.key == "t")
         this.$vuetify.theme.dark = !this.$vuetify.theme.dark;
+
+
     };
   },
 
@@ -74,9 +76,8 @@ export default {
       if (!this.moveToed) {
         this.moveToed = true;
         this.$vuetify.goTo(this.offset, {
-          duration: 300,
-          offset: 0,
-          easing: "easeInOutCubic",
+          duration: 0,
+          offset: 0
         });
       }
     },

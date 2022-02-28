@@ -156,6 +156,10 @@ app.whenReady().then(() => {
 
             const zip = new StreamZip({file: zUrl});
 
+            zip.on('error', e => {
+                console.error(e)
+            });
+
             zip.on('ready', () => {
 
                 const data = zip.entryDataSync(cacheFace[0]);
