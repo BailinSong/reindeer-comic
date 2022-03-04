@@ -55,6 +55,23 @@ export default {
 
 
     };
+
+    // document.onkeydown = (event) => {
+    //   event.key;
+    //   console.log(event.key);
+    //   if (event.key == "Control") {
+    //     console.log("down:" + event.key);
+    //
+    //     if (this.openBook) {
+    //       this.openBook = false;
+    //     }
+    //   }
+    //
+    //   if (event.ctrlKey && event.key == "t")
+    //     this.$vuetify.theme.dark = !this.$vuetify.theme.dark;
+    //
+    //
+    // };
   },
 
   methods: {
