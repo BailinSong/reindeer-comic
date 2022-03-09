@@ -163,13 +163,15 @@ export default {
     });
 
     let finshAddBook = this.deBounce(() => {
-      console.log("this.addBookList.length:" + this.addBookList.length);
+      console.log("begin this.addBookList.length:" + this.addBookList.length);
 
       this.addBookList.forEach((element) => {
+        console.log('add book'+element.title)
         this.books.push(element);
         this.items.push(element.title);
       });
-      this.addBookList.slice(0, -1);
+      this.addBookList=this.addBookList.slice(0, -1);
+      console.log("end this.addBookList.length:" + this.addBookList.length);
     }, 1000);
 
     ipcRenderer.on("addBooks-reply", (event, arg) => {
