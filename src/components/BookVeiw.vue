@@ -2,15 +2,15 @@
   <v-container @mousewheel.ctrl="handleZoom" >
 
     <v-row no-gutters  ref="viewContainer" >
-      <v-col cols="12" align="center" v-for="file in files" :key="file" >
-        <v-img
-          style="display: flex; justify-content: space-around;filter:  contrast(100%) blur(0.5px) brightness(100%) saturate(100%)"
+      <v-col cols="12" align="center" v-for="(file,index) in files" :key="file" >
+        <v-img v-intersect="(t,o,i)=>onIntersect(t,o,i,index)"
+          style="display: flex; justify-content: space-around;filter:  contrast(100%) blur(0.0px) brightness(100%) saturate(100%)"
           flex
           :src="file"
           contain
           :width="width"
           min-height="200"
-        ></v-img>
+        />
       </v-col>
     </v-row>
   </v-container>
@@ -42,14 +42,34 @@ export default {
       arg.forEach((element) => {
         this.$nextTick(()=>{
           fileList.push(element);
+          // var image=new Image();
+          // image.src=element;
         })
       });
     });
     ipcRenderer.send("readfs", this.bookPath);
   },
 
-  methods: {
+  methods: {preLoad(index,file){
+       console.info(index,file);
+      return true
+    },
+    onIntersect(entries, observer, isIntersecting,index){
 
+      if(isIntersecting){
+        console.info('onIntersect:'+index)
+        if (this.files.length < (index + 1)) {
+          new Image(this.files[index+1])
+        }
+        if (this.files.length < (index + 2)) {
+          new Image(this.files[index+2])
+        }
+        if (this.files.length < (index + 3)) {
+          new Image(this.files[index+3])
+        }
+      }
+
+    },
     handleZoom(evt){
       evt = evt || window.event
       if (!evt) evt = window.event

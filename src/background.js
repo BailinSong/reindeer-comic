@@ -8,6 +8,8 @@ import path from 'path'
 import os from 'os'
 import StreamZip from 'node-stream-zip'
 import NeDB from 'nedb'
+import { orderBy } from 'natural-orderby';
+
 
 
 const isDevelopment = process.env.NODE_ENV !== 'production'
@@ -360,7 +362,7 @@ function getImageListByDir(arg) {
         }
     }
     imageList = orderImage(imageList)
-
+    // console.info(imageList)
     return imageList
 }
 
@@ -415,11 +417,14 @@ function isImage(filePath) {
 }
 
 function orderImage(imagePathList) {
-    imagePathList.sort(nature)
-    return imagePathList
+
+
+    return orderBy(imagePathList);
 }
 
-function nature(a, b) {
+
+
+/*function nature(a, b) {
     let startIndex = -1;
 
     let tempA = a;
@@ -444,24 +449,34 @@ function nature(a, b) {
 
 
     if (tempA.length > tempB.length) {
+
         for (let i = 0; i < tempA.length - tempB.length; i++) {
-            tempB = '0' + tempB
+            tempB = ' ' + tempB
         }
     } else if (tempB.length > tempA.length) {
+
         for (let i = 0; i < tempB.length - tempA.length; i++) {
-            tempA = '0' + tempA
+            tempA = ' ' + tempA
         }
     }
 
     if (tempA > tempB) {
+        console.info(a+":"+tempA +" > "+ b+":"+tempB)
         return 1
     } else if (tempA < tempB) {
+        console.info(a+":"+tempA +" < "+ b+":"+tempB)
         return -1
     } else {
+        console.info(a+":"+tempA +" = "+ b+":"+tempB)
+        if(a.length>tempB.length){
+            return 1;
+        }else if(a.length<tempB.length){
+            return -1
+        }
         return 0
     }
 
-}
+}*/
 
 function mkdirsSync(dirname) {
     if (fs.existsSync(dirname)) {
