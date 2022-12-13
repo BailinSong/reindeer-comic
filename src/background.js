@@ -125,7 +125,7 @@ app.whenReady().then(() => {
             console.log(request.url)
             const pCallback = callback
             const url = decodeURI(request.url.substr(6));
-            const idx = url.toLowerCase().indexOf('.zip/');
+            const idx = url.toLowerCase().lastIndexOf('.zip/');
             let eName;
             let zUrl;
 
