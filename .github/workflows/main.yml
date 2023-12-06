@@ -37,6 +37,9 @@ jobs:
       - name: npm install
         run: |
           npm install yarn
+      - name: set yarn
+        run: |
+          yarn config set ignore-engines true
           
       - name: yarn install
         run: |
