@@ -122,7 +122,7 @@ app.on('activate', () => {
 app.whenReady().then(() => {
     protocol.registerBufferProtocol('zip', (request, callback) => {
 
-            console.log(request.url)
+
             const pCallback = callback
             const url = decodeURI(request.url.substr(6));
             const idx = url.toLowerCase().lastIndexOf('.zip/');
@@ -154,7 +154,7 @@ app.whenReady().then(() => {
 
 
             var cacheFace = eName.split('?cache=')
-            console.log(cacheFace)
+
 
 
             const zip = new StreamZip({file: zUrl});
@@ -362,6 +362,7 @@ function getImageListByDir(arg) {
         }
     }
     imageList = orderImage(imageList)
+    console.log('ImageListByDir finsh :' + arg)
     // console.info(imageList)
     return imageList
 }

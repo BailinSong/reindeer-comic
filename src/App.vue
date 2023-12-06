@@ -24,6 +24,7 @@ export default {
   },
   computed: {
     showLibrary() {
+
       console.log(document.documentElement.scrollTop);
 
       if (!this.openBook) {
