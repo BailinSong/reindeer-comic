@@ -40,7 +40,7 @@ jobs:
           
       - name: yarn install
         run: |
-          yarn install
+          yarn install --force
           
       - name: build app for win
         if: matrix.os == 'windows-2019'
